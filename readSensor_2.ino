@@ -26,7 +26,8 @@ void os_getArtEui (u1_t* buf) { }
 void os_getDevEui (u1_t* buf) { }
 void os_getDevKey (u1_t* buf) { }
 
-const unsigned TX_INTERVAL = 3;
+const unsigned SENSE_INTERVAL = 1;
+const unsigned TX_INTERVAL = 1;
 static osjob_t sendjob;
 
 // Pin mapping
@@ -38,11 +39,10 @@ const lmic_pinmap lmic_pins = {
 };
 
 void do_send(osjob_t* j){
-    // read sensor
+    //Sleep TX_INTERVAL seconds
+    sleepSeconds(SENSE_INTERVAL);
     float celsius = sht1x.readTemperatureC();
     float humi = sht1x.readHumidity();
-    //Sleep TX_INTERVAL seconds
-    sleepSeconds(TX_INTERVAL);
 
     u2_t temperature = (u2_t)(celsius * 100);
     u2_t humidity = (u2_t)(humi * 100);
@@ -52,6 +52,8 @@ void do_send(osjob_t* j){
     LMIC.frame[1] = temperature & 0xFF;
     LMIC.frame[2] = (humidity >> 8) & 0xFF;
     LMIC.frame[3] = humidity & 0xFF;
+
+    sleepSeconds(TX_INTERVAL);
     // Check if there is not a current TX/RX job running
     if (LMIC.opmode & OP_TXRXPEND) {
         Serial.println(F("OP_TXRXPEND, not sending"));
@@ -70,7 +72,7 @@ void setup() {
 
     initClock();
 
-    sleepSeconds(1);
+    sleepSeconds(SENSE_INTERVAL);
 
     // LMIC init
     os_init();
@@ -95,6 +97,14 @@ void setup() {
 
     #if defined(CFG_eu868)
       LMIC_setupChannel(0, 868100000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);
+//      LMIC_setupChannel(1, 868300000, DR_RANGE_MAP(DR_SF12, DR_SF7B), BAND_CENTI);      // g-band
+//      LMIC_setupChannel(2, 868500000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
+//      LMIC_setupChannel(3, 867100000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
+//      LMIC_setupChannel(4, 867300000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
+//      LMIC_setupChannel(5, 867500000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
+//      LMIC_setupChannel(6, 867700000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
+//      LMIC_setupChannel(7, 867900000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
+//      LMIC_setupChannel(8, 868800000, DR_RANGE_MAP(DR_FSK,  DR_FSK),  BAND_MILLI);      // g2-band
     #elif defined(CFG_us915)
       LMIC_selectSubBand(1);
     #endif
